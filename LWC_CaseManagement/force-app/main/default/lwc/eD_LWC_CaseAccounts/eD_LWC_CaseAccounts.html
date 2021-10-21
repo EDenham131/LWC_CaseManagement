@@ -1,0 +1,16 @@
+<template>
+
+    <lightning-card title="Related Accounts" icon-name="standard:account">
+
+            <div  style="height: 250px">
+                <lightning-datatable   data={lstAccounts}
+                                columns={columns}
+                                key-field="Id"
+                                hide-checkbox-column="true"
+                                selected-rows={selectedRow}>
+
+                </lightning-datatable>
+            </div>
+                
+    </lightning-card>
+</template>

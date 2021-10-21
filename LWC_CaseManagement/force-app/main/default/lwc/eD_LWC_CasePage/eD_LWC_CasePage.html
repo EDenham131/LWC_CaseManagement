@@ -1,0 +1,18 @@
+<template>
+
+    <lightning-card title="My Cases" icon-name="standard:case">
+        <div style="height: 600px">
+            <lightning-button title="Download CSV File" variant="base" label="Download as CSV" onclick={handleClick} icon-name="utility:download" class="slds-var-m-right_x-small"></lightning-button>
+
+            <lightning-datatable 
+                data={userCases.data} 
+                columns={columns} 
+                key-field="id"
+                onrowaction={editCase}
+                max-row-selection="1"
+                onrowselection={selectRow}>
+            </lightning-datatable>
+
+        </div>
+</lightning-card>
+</template>

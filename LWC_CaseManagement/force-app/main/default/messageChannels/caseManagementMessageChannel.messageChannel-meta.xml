@@ -1,0 +1,17 @@
+<LightningMessageChannel>
+    <masterLabel>CaseData</masterLabel>
+    <isExposed>true</isExposed>
+
+    <description
+  >This is a channel which is used by LWC component to send data</description>
+        <!-- Am creating two fields that will be eventually 
+        used to send data -->
+    <lightningMessageFields>
+        <description>This is the Id of the related Account</description>
+        <fieldName>accountId</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <description>This is the Id of the related Contact</description>
+        <fieldName>contactId</fieldName>
+    </lightningMessageFields>
+</LightningMessageChannel>
