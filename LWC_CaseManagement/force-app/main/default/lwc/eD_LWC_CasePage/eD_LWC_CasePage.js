@@ -21,24 +21,24 @@ export default class ED_CasePage extends NavigationMixin (LightningElement) {
     @wire(MessageContext)   messageContext;
     @track columns = columns;
     @track caseRow={};
+    @track caseList = [];
+    @track wiredCaseList = [];
+    @track error;
 
     userId = Id;
-
-
+    
     @wire (getCases, {userId: '$userId'}) 
-        userCases;
-        /*
-        ({error, data}) {
-            console.log(data);
-            console.log(error);
-            if (data) {
-                this.cases = data;
-                this.errors = null;
-            } else if (error) {
-                this.errors = error;
-                this.cases = undefined;
-            }
-        };*/
+        userCases(result) {
+            this.wiredCaseList = result;
+            if (result.data) {
+                this.caseList = result.data;
+                this.error = undefined;
+              } else if (result.error) {
+                this.error = result.error;
+                this.caseList = [];
+              }
+        };
+
 
     get currentUserId() {
         return this.currentUserId;
@@ -56,7 +56,7 @@ export default class ED_CasePage extends NavigationMixin (LightningElement) {
                 actionName: 'edit',
             },
         });
-        refreshApex(this.userCases);
+        
     }
 
     selectRow (event) {
@@ -70,69 +70,65 @@ export default class ED_CasePage extends NavigationMixin (LightningElement) {
 
 
  
-    }
+}
 
-    handleClick(event){
-        // get the case list 
-        var myCases = userCases.data;
+    // this method validates the data and creates the csv file to download
+    downloadCSVFile() {   
+        let rowEnd = '\n';
+        let csvString = '';
+        // this set elminates the duplicates if have any duplicate keys
+        let rowData = new Set();
 
-        // call the helper function which "return" the CSV data as a String
-        var csv = helper.convertArrayOfObjectsToCSV(myCases);
-        if (csv == null){return;}
+        // getting keys from data
+        this.caseList.forEach(function (record) {
+            Object.keys(record).forEach(function (key) {
+                rowData.add(key);
+            });
+        });
 
-        // ####--code for create a temp. <a> html tag [link tag] for download the CSV file--####
-        var downloadElement = document.createElement('a');
-        downloadElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
-        downloadElement.target = '_self'; 
-        // CSV File Name
-        downloadElement.download = 'MyCases.csv';  
-        document.body.appendChild(downloadElement); // Required for FireFox browser
-        downloadElement.click(); // using click() js function to download csv file
-    }
+        // Array.from() method returns an Array object from any object with a length property or an iterable object.
+        rowData = Array.from(rowData);
+        
+        // splitting using ','
+        csvString += rowData.join(',');
+        csvString += rowEnd;
 
-    convertArrayOfObjectsToCSV (objectRecords){
-        var csvStringResult, counter, keys, columnDivider, lineDivider;
+        // main for loop to get the data based on key value
+        for(let i=0; i < this.caseList.length; i++){
+            let colValue = 0;
 
-        // check if "objectRecords" parameter is null, then return from function
-        if (objectRecords == null || !objectRecords.length) {
-            return null;
-        }
-
-        // store ,[comma] in columnDivider variable for separate CSV values and
-        // for start next line use '\n' [new line] in lineDivider variable
-        columnDivider = ',';
-        lineDivider =  '\n';
-
-        // in the keys valirable store fields API Names as a key
-        // this labels use in CSV file header
-        keys = Object.keys(objectRecords[0]); // FIXME: If the first record has empty fields, then they won't appear in header.
-        console.log(keys);
-
-        csvStringResult = '';
-        csvStringResult += keys.join(columnDivider);
-        csvStringResult += lineDivider;
-
-        for(var i=0; i < objectRecords.length; i++){
-            counter = 0;
-
-            for(var sTempkey in keys) {
-                var skey = keys[sTempkey] ;
-
-                // add , [comma] after every String value,. [except first]
-                if(counter > 0){
-                    csvStringResult += columnDivider;
+            // validating keys in data
+            for(let key in rowData) {
+                if(rowData.hasOwnProperty(key)) {
+                    // Key value 
+                    // Ex: Id, Name
+                    let rowKey = rowData[key];
+                    // add , after every value except the first.
+                    if(colValue > 0){
+                        csvString += ',';
+                    }
+                    // If the column is undefined, it as blank in the CSV file.
+                    let value = this.caseList[i][rowKey] === undefined ? '' : this.caseList[i][rowKey];
+                    csvString += '"'+ value +'"';
+                    colValue++;
                 }
-
-                csvStringResult += '"'+ objectRecords[i][skey]+'"';
-
-                counter++;
-
             }
-
-            csvStringResult += lineDivider;
+            csvString += rowEnd;
         }
 
-        return csvStringResult;
+        // Creating anchor element to download
+        let downloadElement = document.createElement('a');
+
+        // This  encodeURI encodes special characters, except: , / ? : @ & = + $ # (Use encodeURIComponent() to encode these characters).
+        downloadElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvString);
+        downloadElement.target = '_self';
+        // CSV File Name
+        downloadElement.download = 'MyCases.csv';
+        // below statement is required if you are using firefox browser
+        document.body.appendChild(downloadElement);
+        // click() Javascript function to download CSV file
+        downloadElement.click(); 
+        window.alert("File downloaded");
     }
 
     handleSuccess() {
@@ -143,6 +139,8 @@ export default class ED_CasePage extends NavigationMixin (LightningElement) {
             variant: this.variant,
         });
         this.dispatchEvent(evt);
-     
+
+        refreshApex(this.wiredCaseList);
+ 
     }
 }
